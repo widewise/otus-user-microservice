@@ -1,0 +1,102 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: m
+  labels:
+    name: m
+
+---
+
+kind: Service
+apiVersion: v1
+metadata:
+  name: mssql
+spec:
+  ports:
+    - protocol: TCP
+      port: 1433
+      targetPort: 1433
+      nodePort: 0
+---
+
+apiVersion: v1
+kind: Endpoints
+metadata:
+  name: mssql-endpoints
+  namespace: m
+subsets:
+  - addresses:
+      - ip: <YOUR_LOCAL_MSSQL_SERVER_IP>
+    ports:
+      - port: 1433
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: userapp
+  name: userapp
+  namespace: m
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: userapp
+  template:
+    metadata:
+      labels:
+        app: userapp
+    spec:
+      containers:
+      - name: userapp
+        image: docker.io/widedreadnout/otus-microservice-user
+        ports:
+          - containerPort: 8000
+        volumeMounts:
+          - name: secrets
+            mountPath: /app/secrets
+            readOnly: true
+      volumes:
+      - name: secrets
+        secret:
+          secretName: secret-appsettings
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: userapp-service
+  namespace: m
+
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+  selector:
+    app: userapp
+  type: NodePort
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: userapp-ingress
+  namespace: m
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+spec:
+  rules:
+  - host: "arch.homework"
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: userapp-service
+              port:
+                number: 80

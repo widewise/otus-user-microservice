@@ -1,34 +1,103 @@
 apiVersion: v1
-kind: Namespace
+kind: ConfigMap
 metadata:
-  name: m
-  labels:
-    name: m
-
----
-
-kind: Service
-apiVersion: v1
-metadata:
-  name: mssql
-spec:
-  ports:
-    - protocol: TCP
-      port: 1433
-      targetPort: 1433
-      nodePort: 0
----
-
-apiVersion: v1
-kind: Endpoints
-metadata:
-  name: mssql-endpoints
+  name: postgres-configmap
   namespace: m
-subsets:
-  - addresses:
-      - ip: <YOUR_LOCAL_MSSQL_SERVER_IP>
-    ports:
-      - port: 1433
+data:
+  POSTGRES_DB: postgres
+
+---
+
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv
+  namespace: m
+  labels:
+    type: local
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 1Gi
+  hostPath:
+    path: /var/lib/postgresql/data
+
+---
+
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pvc
+  namespace: m
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: m
+  labels:
+    app: postgres
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      volumes:
+        - name: postgres-pv-storage
+          persistentVolumeClaim:
+            claimName: postgres-pvc
+      containers:
+      - name: postgres
+        image: postgres:latest
+        ports:
+          - containerPort: 5432
+        resources:
+          requests:
+            cpu: 100m
+            memory: 100Mi
+          limits:
+            cpu: 200m
+            memory: 200Mi
+        envFrom:
+        - secretRef:
+            name: postgres-secrets
+        - configMapRef:
+            name: postgres-configmap
+        volumeMounts:
+              - mountPath: "/var/lib/postgresql/data"
+                name: postgres-pv-storage
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: m
+spec:
+ type: ClusterIP
+ ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+ selector:
+   app: postgres
 
 ---
 

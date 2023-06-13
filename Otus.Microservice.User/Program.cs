@@ -18,7 +18,7 @@ if (dbConnectionString != null)
 {
     // Register database
     builder.Services.AddDbContext<AppDbContext>(options =>
-        options.UseSqlServer(dbConnectionString));
+        options.UseNpgsql(dbConnectionString));
 }
 
 var app = builder.Build();

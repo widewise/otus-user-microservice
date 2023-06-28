@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Otus.Microservice.User;
+using Prometheus;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +52,8 @@ app.UseHttpsRedirection();
 
 app.UseAuthorization();
 
+app.UseMetricServer();
+app.UseHttpMetrics();
 app.MapControllers();
 
 app.Run();

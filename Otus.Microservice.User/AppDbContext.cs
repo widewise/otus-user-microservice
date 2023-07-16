@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace Otus.Microservice.User;
 
-public class AppDbContext : DbContext
+public class AppDbContext : IdentityUserContext<Models.User, long>
 {
     private readonly IConfiguration _configuration;
 
@@ -15,15 +16,4 @@ public class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         => optionsBuilder.UseNpgsql(_configuration.GetConnectionString("DefaultConnection"));
-
-    public DbSet<Models.User> Users { get; set; }
-
-    protected override void OnModelCreating(ModelBuilder builder)
-    {
-        builder.Entity<Models.User>()
-            .Property(f => f.Id)
-            .ValueGeneratedOnAdd();
-        // Seed database with authors and books for demo
-        new DbInitializer(builder).Seed();
-    }
 }

@@ -7,13 +7,29 @@
 	},
 	"item": [
 		{
-			"name": "Create user",
+			"name": "Register user 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check if user registered\", () => {\r",
+							"  pm.response.to.have.status(201);\r",
+							"  const responseJson = pm.response.json();\r",
+							"  pm.collectionVariables.set(\"user_1_email\", responseJson.email);\r",
+							"  pm.collectionVariables.set(\"user_1_name\", responseJson.username);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"username\": \"username\",\r\n    \"firstName\": \"firstName\",\r\n    \"lastName\": \"lastName\",\r\n    \"email\": \"email@mail.com\",\r\n    \"phone\": \"+7 999 999 9999\"\r\n}",
+					"raw": "{\r\n    \"email\": \"{{$randomExampleEmail}}\",\r\n    \"username\": \"user_1_{{$randomUserName}}\",\r\n    \"password\": \"{{user_password}}\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -21,47 +37,85 @@
 					}
 				},
 				"url": {
-					"raw": "http://arch.homework/user",
+					"raw": "http://{{baseUrl}}/api/auth/register",
 					"protocol": "http",
 					"host": [
-						"arch",
-						"homework"
+						"{{baseUrl}}"
 					],
 					"path": [
-						"user"
+						"api",
+						"auth",
+						"register"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Get user",
+			"name": "Check unauthorized get user 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check get user response with status 401\", () => {\r",
+							"  pm.response.to.have.status(401);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://arch.homework/user/1",
+					"raw": "http://{{baseUrl}}/api/user/99999999999",
 					"protocol": "http",
 					"host": [
-						"arch",
-						"homework"
+						"{{baseUrl}}"
 					],
 					"path": [
+						"api",
 						"user",
-						"1"
+						"99999999999"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Update user",
+			"name": "Login user 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check if user logined and save auth token\", () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"  const responseJson = pm.response.json();\r",
+							"  pm.collectionVariables.set(\"bearer_token\", responseJson.token);\r",
+							"  function parseJwt (token, part) {\r",
+							"    var base64Url = token.split('.')[part];\r",
+							"    var words = CryptoJS.enc.Base64.parse(base64Url);\r",
+							"    var jsonPayload = CryptoJS.enc.Utf8.stringify(words);\r",
+							"    return JSON.parse(jsonPayload);\r",
+							"  };\r",
+							"  const payload = parseJwt(responseJson.token, 1);\r",
+							"  const user_id = payload[\"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier\"];\r",
+							"  pm.collectionVariables.set(\"user_1_id\", user_id);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
-				"method": "PUT",
+				"method": "POST",
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\r\n    \"username\": \"admin\",\r\n    \"firstName\": \"adm\",\r\n    \"lastName\": \"in\",\r\n    \"email\": \"admin@mail.com\",\r\n    \"phone\": \"+7 999 999 9999\"\r\n}",
+					"raw": "{\r\n  \"email\": \"{{user_1_email}}\",\r\n  \"password\": \"{{user_password}}\"\r\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -69,39 +123,356 @@
 					}
 				},
 				"url": {
-					"raw": "http://arch.homework/user/1",
+					"raw": "http://{{baseUrl}}/api/auth/login",
 					"protocol": "http",
 					"host": [
-						"arch",
-						"homework"
+						"{{baseUrl}}"
 					],
 					"path": [
-						"user",
-						"1"
+						"api",
+						"auth",
+						"login"
 					]
 				}
 			},
 			"response": []
 		},
 		{
-			"name": "Delete user",
+			"name": "Update user 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Update user response equal status 200\", () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
 			"request": {
-				"method": "DELETE",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{bearer_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
 				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"{{user_1_name}}_changed\",\r\n    \"firstName\": \"{{$randomFirstName}}\",\r\n    \"lastName\": \"{{$randomLastName}}\",\r\n    \"email\": \"{{user_1_email}}\",\r\n    \"phone\": \"{{$randomPhoneNumber}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
 				"url": {
-					"raw": "http://arch.homework/user/1",
+					"raw": "http://{{baseUrl}}/api/user/{{user_1_id}}",
 					"protocol": "http",
 					"host": [
-						"arch",
-						"homework"
+						"{{baseUrl}}"
 					],
 					"path": [
+						"api",
 						"user",
-						"1"
+						"{{user_1_id}}"
 					]
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Get user 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Get user response equal status 200\", () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"  const responseJson = pm.response.json();\r",
+							"  const oldUsername = pm.collectionVariables.get(\"user_1_name\");\r",
+							"  pm.expect(responseJson.username).to.eql(oldUsername + \"_changed\");\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{bearer_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/api/user/{{user_1_id}}",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"{{user_1_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register user 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check if user registered\", () => {\r",
+							"  pm.response.to.have.status(201);\r",
+							"  const responseJson = pm.response.json();\r",
+							"  pm.collectionVariables.set(\"user_2_email\", responseJson.email);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"{{$randomExampleEmail}}\",\r\n    \"username\": \"user_2_{{$randomUserName}}\",\r\n    \"password\": \"{{user_password}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{baseUrl}}/api/auth/register",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Login user 2",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check if user logined and save auth token\", () => {\r",
+							"  pm.response.to.have.status(200);\r",
+							"  pm.collectionVariables.set(\"bearer_token\", pm.response.json().token);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"{{user_2_email}}\",\r\n  \"password\": \"{{user_password}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{baseUrl}}/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check can't get user 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check can't get user 1\", () => {\r",
+							"  pm.response.to.have.status(400);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{bearer_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://{{baseUrl}}/api/user/{{user_1_id}}",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"{{user_1_id}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Check can't update user 1",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Check can't update user 1\", () => {\r",
+							"  pm.response.to.have.status(400);\r",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{bearer_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"username\": \"user_1_{{$randomUserName}}_changed\",\r\n    \"firstName\": \"{{$randomFirstName}}\",\r\n    \"lastName\": \"{{$randomLastName}}\",\r\n    \"email\": \"{{user_1_email}}\",\r\n    \"phone\": \"{{$randomPhoneNumber}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://{{baseUrl}}/api/user/{{user_1_id}}",
+					"protocol": "http",
+					"host": [
+						"{{baseUrl}}"
+					],
+					"path": [
+						"api",
+						"user",
+						"{{user_1_id}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "arch.homework",
+			"type": "string"
+		},
+		{
+			"key": "user_1_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_1_name",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_1_email",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_2_email",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_password",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "bearer_token",
+			"value": "",
+			"type": "string"
 		}
 	]
 }

@@ -1,0 +1,26 @@
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@model Otus.Microservice.User.ViewModel.RegistrationViewModel
+@{
+}
+
+<html lang="en">
+<head>
+    <title>Register</title>
+</head>
+<body>
+    <div class="login">
+        <h1>User Registeration</h1>
+ 
+        <form asp-controller="Auth" asp-action="Register" method="post">
+            <p><input asp-for="Username" type="text" placeholder="Username" required></p>
+            <p><input asp-for="Email" type="text" placeholder="Email" required></p>
+            <p><input asp-for="Password" type="password"  placeholder="Password" required></p>
+            <p class="submit"><input type="submit" value="Register"></p>
+            <hr/>
+        </form>
+        <h1>@TempData["Message"]</h1>
+    </div>
+</body>
+</html>
